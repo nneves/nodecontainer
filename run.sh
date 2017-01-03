@@ -270,8 +270,10 @@ NPM_VERSION="3.0.0"
 #NPM_VERSION="4.1.1"
 
 IMAGE="mhart/alpine-node:$NODE_VERSION"
+DOCKERFILE="FROM "$IMAGE"\nRUN npm install -g npm@$NPM_VERSION"
+TAG="nodecontainer/node$NODE_VERSION-npm$NPM_VERSION"
 
-NPM_INSTALL="npm install -g npm@$NPM_VERSION && node --version && npm --version"
+#NPM_INSTALL="npm install -g npm@$NPM_VERSION && node --version && npm --version"
 
 # Setup volume mounts for compose config and context
 if [ "$(pwd)" != '/' ]; then
@@ -286,9 +288,20 @@ if [ -t 0 ]; then
     DOCKER_RUN_OPTIONS="$DOCKER_RUN_OPTIONS -i"
 fi
 
+# Build the docker image based on node/npm version (will cache)
+echo -e "${DOCKERFILE}" | docker build -t $TAG -
+
 exec docker run --rm \
-  $DOCKER_RUN_OPTIONS \
-  $VOLUMES \
-  -w "$(pwd)" \
-  $IMAGE \
-    /bin/sh -c "$NPM_INSTALL && $@"
+ $DOCKER_RUN_OPTIONS \
+ $VOLUMES \
+ -w "$(pwd)" \
+ $TAG \
+   /bin/sh -c "$@"
+
+
+#exec docker run --rm \
+#  $DOCKER_RUN_OPTIONS \
+#  $VOLUMES \
+#  -w "$(pwd)" \
+#  $IMAGE \
+#    /bin/sh -c "$NPM_INSTALL && $@"
